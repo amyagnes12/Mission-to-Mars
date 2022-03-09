@@ -19,6 +19,7 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
+        "hemispheres": hemispheres(browser),
         "last_modified": dt.datetime.now()
     }
     
@@ -94,6 +95,46 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html()
+
+def hemispheres(browser):
+    
+    # Use browser to visit the URL 
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+    hemisphere_image_urls = []
+    html = browser.html
+    mars_soup = soup(html, 'html.parser')
+
+    # find list of items using soup
+    items = mars_soup.find_all('div', class_='item')
+
+    for item in items:
+        hemispheres = {}
+        # get link for each hemisphere
+        link_text = item.find('h3').get_text() 
+        link = browser.find_by_text(link_text)
+        # click to each hemisphere
+        link.click()
+        # Convert the browser html to a soup object
+        html = browser.html
+        each_soup = soup(html, 'html.parser')
+        try:
+            # find image url
+            wide_img = each_soup.find('div', class_='wide-image-wrapper')
+            ul = wide_img.find('li')
+            base_url = ul.find('a').get('href')
+            # find title 
+            title = each_soup.find('h2').get_text()
+        
+        except AttributeError:
+            return None
+        # use the base url to create an absolute url
+        image_url = f'https://marshemispheres.com/{base_url}' 
+        hemispheres['img_url'] = image_url
+        hemispheres['title'] = title
+        hemisphere_image_urls.append(hemispheres)
+        browser.back()
+    return hemisphere_image_urls
 
 if __name__ == "__main__":
     
